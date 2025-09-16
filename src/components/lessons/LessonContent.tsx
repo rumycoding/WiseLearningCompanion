@@ -2,6 +2,7 @@ import { Lesson } from '../../types/lesson';
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useLanguage } from '../../context/LanguageContext';
+import { PinyinContent } from './PinyinText';
 
 interface LessonContentProps {
   lesson: Lesson | null;
@@ -73,9 +74,10 @@ export const LessonContent = ({
             {lesson.title}
           </h1>
           
-          <div className="text-lg leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200 chinese-content chinese-character">
-            {lesson.content}
-          </div>
+          <PinyinContent
+            content={lesson.content}
+            className="text-xl leading-relaxed text-gray-800 dark:text-gray-200 chinese-content chinese-character"
+          />
           
           {/* Lesson metadata */}
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
