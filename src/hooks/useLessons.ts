@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Lesson, LessonCategory } from '../types/lesson';
-import { 
-  lessonFiles, 
-  parseMarkdownContent, 
-  categorizeLessons, 
+import {
+  lessonFiles,
+  parseMarkdownContent,
+  categorizeLessons,
   determineLessonCategory,
-  loadLessonContent 
+  loadLessonContent,
+  loadLessonMetadata
 } from '../utils/lessonUtils';
 
 export const useLessons = () => {
@@ -24,7 +25,7 @@ export const useLessons = () => {
         const content = await loadLessonContent(filename);
         if (content) {
           const { title, body } = parseMarkdownContent(content);
-          const category = determineLessonCategory(title, body);
+          const category = await determineLessonCategory(filename);
           
           const lesson: Lesson = {
             id: filename.replace('.md', ''),
