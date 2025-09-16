@@ -3,6 +3,7 @@ import { addPinyinToText } from '../../utils/pinyinUtils';
 import { Button } from '../ui/button';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { WordPopup } from './WordPopup';
 
 interface PinyinTextProps {
   text: string;
@@ -11,9 +12,32 @@ interface PinyinTextProps {
 
 export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '' }) => {
   const [showPinyin, setShowPinyin] = useState(true);
+  const [selectedWord, setSelectedWord] = useState<{
+    word: string;
+    pinyin: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const { language } = useLanguage();
   
   const processedText = addPinyinToText(text);
+
+  const handleWordClick = (word: string, pinyin: string, event: React.MouseEvent) => {
+    if (!pinyin) return; // Only show popup for Chinese characters with pinyin
+    
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    setSelectedWord({
+      word,
+      pinyin,
+      position: {
+        x: rect.left + rect.width / 2,
+        y: rect.top
+      }
+    });
+  };
+
+  const closePopup = () => {
+    setSelectedWord(null);
+  };
 
   const getToggleText = () => {
     if (showPinyin) {
@@ -47,7 +71,11 @@ export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '' }) 
                     {charInfo.pinyin}
                   </span>
                 )}
-                <span className="chinese-char text-lg font-medium">
+                <span
+                  className="chinese-char text-lg font-medium cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded px-1 transition-colors"
+                  onClick={(e) => handleWordClick(charInfo.char, charInfo.pinyin || '', e)}
+                  title={language === 'zh' ? '点击查看释义' : 'Click for definition'}
+                >
                   {charInfo.char}
                 </span>
               </span>
@@ -59,6 +87,16 @@ export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '' }) 
           </span>
         ))}
       </div>
+      
+      {selectedWord && (
+        <WordPopup
+          word={selectedWord.word}
+          pinyin={selectedWord.pinyin}
+          position={selectedWord.position}
+          onClose={closePopup}
+          isVisible={true}
+        />
+      )}
     </div>
   );
 };
@@ -70,9 +108,32 @@ interface PinyinContentProps {
 
 export const PinyinContent: React.FC<PinyinContentProps> = ({ content, className = '' }) => {
   const [showPinyin, setShowPinyin] = useState(true);
+  const [selectedWord, setSelectedWord] = useState<{
+    word: string;
+    pinyin: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const { language } = useLanguage();
   
   const lines = content.split('\n');
+
+  const handleWordClick = (word: string, pinyin: string, event: React.MouseEvent) => {
+    if (!pinyin) return; // Only show popup for Chinese characters with pinyin
+    
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    setSelectedWord({
+      word,
+      pinyin,
+      position: {
+        x: rect.left + rect.width / 2,
+        y: rect.top
+      }
+    });
+  };
+
+  const closePopup = () => {
+    setSelectedWord(null);
+  };
 
   const getToggleText = () => {
     if (showPinyin) {
@@ -115,7 +176,11 @@ export const PinyinContent: React.FC<PinyinContentProps> = ({ content, className
                           {charInfo.pinyin}
                         </span>
                       )}
-                      <span className="chinese-char text-2xl font-medium block">
+                      <span
+                        className="chinese-char text-2xl font-medium block cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded px-1 transition-colors"
+                        onClick={(e) => handleWordClick(charInfo.char, charInfo.pinyin || '', e)}
+                        title={language === 'zh' ? '点击查看释义' : 'Click for definition'}
+                      >
                         {charInfo.char}
                       </span>
                     </span>
@@ -137,6 +202,16 @@ export const PinyinContent: React.FC<PinyinContentProps> = ({ content, className
           );
         })}
       </div>
+      
+      {selectedWord && (
+        <WordPopup
+          word={selectedWord.word}
+          pinyin={selectedWord.pinyin}
+          position={selectedWord.position}
+          onClose={closePopup}
+          isVisible={true}
+        />
+      )}
     </div>
   );
 };
