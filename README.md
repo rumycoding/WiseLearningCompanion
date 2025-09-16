@@ -1,21 +1,17 @@
-# Chatbot UI
+# Wise Learning Companion
 
-A lightweight and modern chat interface for LLM interactions with Markdown support!
+This AI-powered learning companion is specifically designed to help seniors learn Chinese characters in an intuitive, patient, and engaging way. 
 
-👉 Looking for a version with web search integration?   
-Check out the [`websearch_template`](https://github.com/ChristophHandschuh/chatbot-ui/tree/websearch_template) branch, which includes contributions from [CameliaK](https://github.com/CameliaK)
-
-## Overview
-
-A minimalist chat interface built with React and TypeScript, designed to be easily integrated with any LLM backend. Features a clean and modern design.
-
-![Demo](demo/image.png)
+The frontend is forked from [chatbot-ui](https://github.com/ChristophHandschuh/chatbot-ui.git), credit to 
+- [Leon Binder](https://github.com/LeonBinder)
+- [Christoph Handschuh](https://github.com/ChristophHandschuh)
+- [CameliaK](https://github.com/CameliaK) – Implemented web search and integrated it into the LLM prompt)
 
 ## Getting Started
 
 1. Clone the repository
 ```bash
-git clone https://github.com/ChristophHandschuh/chatbot-ui.git
+git clone https://github.com/rumycoding/WiseLearningCompanion.git
 cd chatbot-ui
 ```
 
@@ -47,17 +43,6 @@ pip install websockets
 ```bash
 python test.py
 ```
-
-## Credits
-
-This project was built by:
-- [Leon Binder](https://github.com/LeonBinder)
-- [Christoph Handschuh](https://github.com/ChristophHandschuh)
-
-Additional contribution by:
-- [CameliaK](https://github.com/CameliaK) – Implemented web search and integrated it into the LLM prompt
-
-Some code components were inspired by and adapted from [Vercel's AI Chatbot](https://github.com/vercel/ai-chatbot).
 
 ## License
 
