@@ -5,6 +5,7 @@ import { ArrowUpIcon } from "./icons"
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ChatInputProps {
     question: string;
@@ -13,21 +14,23 @@ interface ChatInputProps {
     isLoading: boolean;
 }
 
-const suggestedActions = [
-    {
-        title: 'How is the weather',
-        label: 'in Vienna?',
-        action: 'How is the weather in Vienna today?',
-    },
-    {
-        title: 'Tell me a fun fact',
-        label: 'about pandas',
-        action: 'Tell me an interesting fact about pandas',
-    },
-];
 
 export const ChatInput = ({ question, setQuestion, onSubmit, isLoading }: ChatInputProps) => {
+    const { t } = useLanguage();
     const [showSuggestions, setShowSuggestions] = useState(true);
+
+    const suggestedActions = [
+        {
+            title: t('chat.learnChinese'),
+            label: t('chat.basicKnowledge'),
+            action: t('chat.learnAction'),
+        },
+        {
+            title: t('chat.characterPractice'),
+            label: t('chat.pronunciation'),
+            action: t('chat.practiceAction'),
+        },
+    ];
 
     return(
     <div className="relative w-full flex flex-col gap-4">
@@ -68,7 +71,7 @@ export const ChatInput = ({ question, setQuestion, onSubmit, isLoading }: ChatIn
         />
 
         <Textarea
-        placeholder="Send a message..."
+        placeholder={t('chat.placeholder')}
         className={cx(
             'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl text-base bg-muted',
         )}
@@ -79,7 +82,7 @@ export const ChatInput = ({ question, setQuestion, onSubmit, isLoading }: ChatIn
                 event.preventDefault();
 
                 if (isLoading) {
-                    toast.error('Please wait for the model to finish its response!');
+                    toast.error(t('chat.waitMessage'));
                 } else {
                     setShowSuggestions(false);
                     onSubmit();

@@ -1,0 +1,177 @@
+/* Chinese text rendering improvements */
+.chinese-content {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+  line-height: 1.8;
+  letter-spacing: 0.05em;
+}
+
+.chinese-content h1,
+.chinese-content h2,
+.chinese-content h3 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.chinese-content p {
+  margin-bottom: 1.2rem;
+}
+
+/* Lesson card hover effects */
+.lesson-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.lesson-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .lesson-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Split layout responsive adjustments */
+@media (max-width: 768px) {
+  .split-layout {
+    flex-direction: column;
+  }
+  
+  .split-layout > div:first-child {
+    width: 100% !important;
+    height: 60%;
+    border-right: none;
+    border-bottom: 1px solid rgb(229 231 235);
+  }
+  
+  .dark .split-layout > div:first-child {
+    border-bottom-color: rgb(55 65 81);
+  }
+  
+  .split-layout > div:last-child {
+    width: 100% !important;
+    height: 40%;
+  }
+}
+
+/* Lesson browser responsive */
+@media (max-width: 1024px) {
+  .lesson-browser-sidebar {
+    width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lesson-browser-sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100%;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    background: white;
+    border-right: 1px solid rgb(229 231 235);
+  }
+  
+  .dark .lesson-browser-sidebar {
+    background: rgb(17 24 39);
+    border-right-color: rgb(55 65 81);
+  }
+  
+  .lesson-browser-sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(75 85 99);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(148 163 184);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128);
+}
+
+/* Loading animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Chinese character display improvements */
+.chinese-character {
+  font-size: 1.25em;
+  font-weight: 500;
+  display: inline-block;
+  margin: 0 0.1em;
+}
+
+/* Lesson navigation buttons */
+.lesson-nav-btn {
+  transition: all 0.2s ease;
+}
+
+.lesson-nav-btn:hover:not(:disabled) {
+  transform: translateX(2px);
+}
+
+.lesson-nav-btn:hover:not(:disabled).prev {
+  transform: translateX(-2px);
+}
+
+/* Chat message styling in lesson context */
+.lesson-chat-message {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.lesson-chat-message code {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", monospace;
+}
+
+/* Lesson tags */
+.lesson-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: rgb(239 246 255);
+  color: rgb(29 78 216);
+  border: 1px solid rgb(191 219 254);
+}
+
+.dark .lesson-tag {
+  background-color: rgb(30 58 138);
+  color: rgb(147 197 253);
+  border-color: rgb(59 130 246);
+}
