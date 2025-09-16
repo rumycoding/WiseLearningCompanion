@@ -12,7 +12,7 @@ The frontend is forked from [chatbot-ui](https://github.com/ChristophHandschuh/c
 1. Clone the repository
 ```bash
 git clone https://github.com/rumycoding/WiseLearningCompanion.git
-cd chatbot-ui
+cd WiseLearningCompanion
 ```
 
 2. Install dependencies
