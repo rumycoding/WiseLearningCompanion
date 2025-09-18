@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Volume2, X } from 'lucide-react';
+import { Volume2, X, Play, Pause } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useWordDefinition } from '../../hooks/useWordDefinition';
 
 interface WordPopupProps {
   word: string;
@@ -9,59 +10,32 @@ interface WordPopupProps {
   position: { x: number; y: number };
   onClose: () => void;
   isVisible: boolean;
+  difficulty?: string;
 }
-
-// Simple word dictionary - in a real app, this would come from an API or database
-const wordDictionary: { [key: string]: { en: string; zh: string } } = {
-  '天': { en: 'sky, heaven', zh: '天空，天堂' },
-  '地': { en: 'earth, ground', zh: '地球，土地' },
-  '人': { en: 'person, human', zh: '人，人类' },
-  '金': { en: 'gold, metal', zh: '金子，金属' },
-  '木': { en: 'wood, tree', zh: '木头，树木' },
-  '水': { en: 'water', zh: '水' },
-  '火': { en: 'fire', zh: '火' },
-  '土': { en: 'earth, soil', zh: '土壤，泥土' },
-  '口': { en: 'mouth', zh: '嘴巴' },
-  '耳': { en: 'ear', zh: '耳朵' },
-  '目': { en: 'eye', zh: '眼睛' },
-  '手': { en: 'hand', zh: '手' },
-  '足': { en: 'foot', zh: '脚' },
-  '日': { en: 'sun, day', zh: '太阳，日子' },
-  '月': { en: 'moon, month', zh: '月亮，月份' },
-  '山': { en: 'mountain', zh: '山' },
-  '川': { en: 'river, stream', zh: '河流' },
-  '风': { en: 'wind', zh: '风' },
-  '雨': { en: 'rain', zh: '雨' },
-  '雷': { en: 'thunder', zh: '雷' },
-  '电': { en: 'electricity, lightning', zh: '电，闪电' },
-  '春': { en: 'spring', zh: '春天' },
-  '夏': { en: 'summer', zh: '夏天' },
-  '秋': { en: 'autumn', zh: '秋天' },
-  '冬': { en: 'winter', zh: '冬天' },
-  '上': { en: 'up, above', zh: '上面' },
-  '下': { en: 'down, below', zh: '下面' },
-  '左': { en: 'left', zh: '左边' },
-  '右': { en: 'right', zh: '右边' },
-  '中': { en: 'middle, center', zh: '中间' },
-  '大': { en: 'big, large', zh: '大的' },
-  '小': { en: 'small, little', zh: '小的' },
-  '多': { en: 'many, much', zh: '很多' },
-  '少': { en: 'few, little', zh: '很少' },
-  '长': { en: 'long', zh: '长的' },
-  '短': { en: 'short', zh: '短的' },
-  '高': { en: 'tall, high', zh: '高的' },
-  '低': { en: 'low, short', zh: '低的' },
-};
 
 export const WordPopup: React.FC<WordPopupProps> = ({
   word,
   pinyin,
   position,
   onClose,
-  isVisible
+  isVisible,
+  difficulty
 }) => {
   const { language } = useLanguage();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playingDefinition, setPlayingDefinition] = useState(false);
+  const [playingExample, setPlayingExample] = useState<number | null>(null);
+
+  // Use React Query hook for word definition
+  const {
+    data: definitionResult,
+    isLoading
+  } = useWordDefinition(word, language, difficulty, isVisible);
+
+  // Extract definition and examples from query result
+  const definition = definitionResult?.data?.definition || 
+    (language === 'zh' ? '暂无释义' : 'No definition available');
+  const examples = definitionResult?.data?.examples || [];
 
   // Close popup on escape key
   useEffect(() => {
@@ -93,7 +67,14 @@ export const WordPopup: React.FC<WordPopupProps> = ({
   }, [isVisible, onClose]);
 
   const playPronunciation = async () => {
-    if (isPlaying) return;
+    // If already playing, stop the speech
+    if (isPlaying) {
+      if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+      }
+      setIsPlaying(false);
+      return;
+    }
     
     setIsPlaying(true);
     try {
@@ -117,12 +98,68 @@ export const WordPopup: React.FC<WordPopupProps> = ({
     }
   };
 
-  const getDefinition = (word: string) => {
-    const definition = wordDictionary[word];
-    if (!definition) {
-      return language === 'zh' ? '暂无释义' : 'No definition available';
+  const playDefinition = async () => {
+    // If already playing, stop the speech
+    if (playingDefinition) {
+      if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+      }
+      setPlayingDefinition(false);
+      return;
     }
-    return language === 'zh' ? definition.zh : definition.en;
+    
+    if (!definition) return;
+    
+    setPlayingDefinition(true);
+    try {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(definition);
+        utterance.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+        utterance.rate = 0.8;
+        
+        utterance.onend = () => setPlayingDefinition(false);
+        utterance.onerror = () => setPlayingDefinition(false);
+        
+        speechSynthesis.speak(utterance);
+      } else {
+        setTimeout(() => setPlayingDefinition(false), 1000);
+      }
+    } catch (error) {
+      console.error('Error playing definition:', error);
+      setPlayingDefinition(false);
+    }
+  };
+
+  const playExample = async (example: string, index: number) => {
+    // If this example is already playing, stop the speech
+    if (playingExample === index) {
+      if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+      }
+      setPlayingExample(null);
+      return;
+    }
+    
+    if (!example) return;
+    
+    setPlayingExample(index);
+    try {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(example);
+        utterance.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+        utterance.rate = 0.8;
+        
+        utterance.onend = () => setPlayingExample(null);
+        utterance.onerror = () => setPlayingExample(null);
+        
+        speechSynthesis.speak(utterance);
+      } else {
+        setTimeout(() => setPlayingExample(null), 1000);
+      }
+    } catch (error) {
+      console.error('Error playing example:', error);
+      setPlayingExample(null);
+    }
   };
 
   if (!isVisible) return null;
@@ -157,11 +194,14 @@ export const WordPopup: React.FC<WordPopupProps> = ({
               variant="ghost"
               size="sm"
               onClick={playPronunciation}
-              disabled={isPlaying}
               className="p-1 h-8 w-8 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              title={language === 'zh' ? '播放发音' : 'Play pronunciation'}
+              title={language === 'zh' ? (isPlaying ? '停止发音' : '播放发音') : (isPlaying ? 'Stop pronunciation' : 'Play pronunciation')}
             >
-              <Volume2 className={`h-4 w-4 ${isPlaying ? 'text-blue-500' : 'text-gray-600 dark:text-gray-400'}`} />
+              {isPlaying ? (
+                <Pause className="h-4 w-4 text-blue-500" />
+              ) : (
+                <Volume2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              )}
             </Button>
           </div>
           <Button
@@ -183,13 +223,67 @@ export const WordPopup: React.FC<WordPopupProps> = ({
 
         {/* Definition */}
         <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-            {language === 'zh' ? '释义：' : 'Definition:'}
-          </p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {language === 'zh' ? '释义：' : 'Definition:'}
+            </p>
+            {!isLoading && definition && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={playDefinition}
+                className="p-1 h-6 w-6 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                title={language === 'zh' ? (playingDefinition ? '停止播放' : '播放释义') : (playingDefinition ? 'Stop definition' : 'Play definition')}
+              >
+                {playingDefinition ? (
+                  <Pause className="h-3 w-3 text-blue-500" />
+                ) : (
+                  <Play className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                )}
+              </Button>
+            )}
+          </div>
           <p className="text-base text-gray-900 dark:text-white leading-relaxed">
-            {getDefinition(word)}
+            {isLoading ? (
+              <span className="text-gray-500 dark:text-gray-400">
+                {language === 'zh' ? '加载中...' : 'Loading...'}
+              </span>
+            ) : (
+              definition
+            )}
           </p>
         </div>
+
+        {/* Examples */}
+        {!isLoading && examples.length > 0 && (
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+              {language === 'zh' ? '例句：' : 'Examples:'}
+            </p>
+            <div className="space-y-2">
+              {examples.map((example, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed flex-1">
+                    • {example}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => playExample(example, index)}
+                    className="p-1 h-5 w-5 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex-shrink-0 mt-0.5"
+                    title={language === 'zh' ? (playingExample === index ? '停止播放' : '播放例句') : (playingExample === index ? 'Stop example' : 'Play example')}
+                  >
+                    {playingExample === index ? (
+                      <Pause className="h-2.5 w-2.5 text-blue-500" />
+                    ) : (
+                      <Play className="h-2.5 w-2.5 text-gray-500 dark:text-gray-400" />
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tip */}
         <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">

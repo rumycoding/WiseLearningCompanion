@@ -77,6 +77,7 @@ export const LessonContent = ({
           <PinyinContent
             content={lesson.content}
             className="text-xl leading-relaxed text-gray-800 dark:text-gray-200 chinese-content chinese-character"
+            difficulty={lesson.difficulty}
           />
           
           {/* Lesson metadata */}

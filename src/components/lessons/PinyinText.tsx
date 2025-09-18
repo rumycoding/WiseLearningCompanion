@@ -8,9 +8,10 @@ import { WordPopup } from './WordPopup';
 interface PinyinTextProps {
   text: string;
   className?: string;
+  difficulty?: string;
 }
 
-export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '' }) => {
+export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '', difficulty }) => {
   const [showPinyin, setShowPinyin] = useState(true);
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
@@ -95,6 +96,7 @@ export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '' }) 
           position={selectedWord.position}
           onClose={closePopup}
           isVisible={true}
+          difficulty={difficulty}
         />
       )}
     </div>
@@ -104,9 +106,10 @@ export const PinyinText: React.FC<PinyinTextProps> = ({ text, className = '' }) 
 interface PinyinContentProps {
   content: string;
   className?: string;
+  difficulty?: string;
 }
 
-export const PinyinContent: React.FC<PinyinContentProps> = ({ content, className = '' }) => {
+export const PinyinContent: React.FC<PinyinContentProps> = ({ content, className = '', difficulty }) => {
   const [showPinyin, setShowPinyin] = useState(true);
   const [selectedWord, setSelectedWord] = useState<{
     word: string;
@@ -210,6 +213,7 @@ export const PinyinContent: React.FC<PinyinContentProps> = ({ content, className
           position={selectedWord.position}
           onClose={closePopup}
           isVisible={true}
+          difficulty={difficulty}
         />
       )}
     </div>
