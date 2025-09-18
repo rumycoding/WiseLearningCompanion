@@ -1,5 +1,5 @@
 use axum::{
-    extract::Json as ExtractJson,
+    extract::{Json as ExtractJson, State},
     response::Json,
     routing::{get, post},
     Router,
@@ -8,6 +8,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tower_http::cors::CorsLayer;
 use tracing::{info, warn};
+use rig::{agent::Agent, client::{CompletionClient, ProviderClient}, completion::Prompt, providers::azure};
+use dotenv::dotenv;
+
+
+#[derive(Clone)]
+struct AppState {
+    llm_client: Agent<azure::CompletionModel>,
+}
 
 #[derive(Debug, Deserialize)]
 struct WordQuery {
@@ -17,7 +25,7 @@ struct WordQuery {
     difficulty: Option<String>
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, Deserialize)]
 struct WordDefinition {
     word: String,
     definition: String,
@@ -46,88 +54,82 @@ async fn health() -> Json<HealthResponse> {
 }
 
 // Query word with JSON body
-async fn query_word(ExtractJson(query): ExtractJson<WordQuery>) -> Json<QueryResponse> {
+async fn query_word(
+    State(app_state): State<AppState>,
+    ExtractJson(query): ExtractJson<WordQuery>
+) -> Json<QueryResponse> {
     info!("Querying word: {}, language: {:?}, difficulty: {:?}", query.word, query.lang, query.difficulty);
-    
-    // Create mock data for Chinese characters with English and Chinese definitions
-    let mut mock_definitions = HashMap::new();
-    
-    // 天 (sky/heaven)
-    mock_definitions.insert(("天", "en"), WordDefinition {
-        word: "天".to_string(),
-        definition: "Sky, heaven, day".to_string(),
-        examples: vec![
-            "今天天气很好 - The weather is very good today".to_string(),
-            "天空很蓝 - The sky is very blue".to_string(),
-        ],
-    });
-    
-    mock_definitions.insert(("天", "zh"), WordDefinition {
-        word: "天".to_string(),
-        definition: "天空，上天，一日".to_string(),
-        examples: vec![
-            "今天天气很好".to_string(),
-            "天空很蓝".to_string(),
-        ],
-    });
-    
-    // 地 (earth/ground)
-    mock_definitions.insert(("地", "en"), WordDefinition {
-        word: "地".to_string(),
-        definition: "Earth, ground, land".to_string(),
-        examples: vec![
-            "大地很广阔 - The earth is vast".to_string(),
-            "他坐在地上 - He sits on the ground".to_string(),
-        ],
-    });
-    
-    mock_definitions.insert(("地", "zh"), WordDefinition {
-        word: "地".to_string(),
-        definition: "大地，土地，地面".to_string(),
-        examples: vec![
-            "大地很广阔".to_string(),
-            "他坐在地上".to_string(),
-        ],
-    });
-    
-    // 人 (person/people)
-    mock_definitions.insert(("人", "en"), WordDefinition {
-        word: "人".to_string(),
-        definition: "Person, people, human being".to_string(),
-        examples: vec![
-            "他是一个好人 - He is a good person".to_string(),
-            "人们很友善 - People are very friendly".to_string(),
-        ],
-    });
-    
-    mock_definitions.insert(("人", "zh"), WordDefinition {
-        word: "人".to_string(),
-        definition: "人类，人员，个人".to_string(),
-        examples: vec![
-            "他是一个好人".to_string(),
-            "人们很友善".to_string(),
-        ],
-    });
+
     
     // Determine language (default to English if not specified)
     let lang = query.lang.as_deref().unwrap_or("en");
-    
-    // Look up the word in our mock data
-    match mock_definitions.get(&(query.word.as_str(), lang)) {
-        Some(definition) => {
-            info!("Found definition for word: {} in language: {}", query.word, lang);
-            Json(QueryResponse {
-                success: true,
-                data: Some(definition.clone()),
-                message: format!("Definition found for '{}' in {}", query.word, lang),
-            })
+    let difficulty = query.difficulty.as_deref().unwrap_or("beginner");
+
+    let prompt_text = format!(
+        "You are a Chinese language tutor. Provide a definition for the Chinese word '{0}' in {1} language.
+        Difficulty level: {2}
+        
+        Respond with a JSON object containing:
+        - word: the Chinese character(s)
+        - definition: short definition in the requested language
+        - examples: array of 2 example sentences
+        
+        Example response for the word '你好' in English language with beginner difficulty:
+        {{
+            \"word\": \"你好\",
+            \"definition\": \"A common greeting meaning 'hello' or 'hi' in Chinese.\",
+            \"examples\": [
+                \"你好，很高兴见到你。(Hello, nice to meet you.)\",
+                \"老师走进教室说：'你好，同学们！'(The teacher walked into the classroom and said: 'Hello, students!')\"
+            ]
+        }}
+
+        Example response for the word '你好' in Chinese language with beginner difficulty:
+        {{
+            \"word\": \"你好\",
+            \"definition\": \"打招呼用语\",
+            \"examples\": [
+                \"你好，很高兴见到你。\",
+                \"老师走进教室说：'你好，同学们！'\"
+            ]
+        }}
+        
+        Now provide the definition for '{0}' in {1} language with {2} difficulty level.
+        Format your response as valid JSON only, no additional text.",
+        query.word, lang, difficulty
+    );
+
+    match app_state.llm_client
+        .prompt(&prompt_text)
+        .await 
+    {
+        Ok(llm_response) => {
+            info!("Got LLM response for word: {}", query.word);
+            
+            match serde_json::from_str::<WordDefinition>(&llm_response) {
+            Ok(parsed) => {
+                Json(QueryResponse {
+                    success: true,
+                    data: Some(parsed),
+                    message: format!("Definition found for '{}' in {}", query.word, lang),
+                })
+            },
+            Err(e) => {
+                warn!("Failed to parse JSON response: {}", e);
+                Json(QueryResponse {
+                    success: false,
+                    data: None,
+                    message: "Failed to parse LLM response".to_string(),
+                })
+            }
+        }
         },
-        None => {
-            warn!("No definition found for word: {} in language: {}", query.word, lang);
+        Err(e) => {
+            warn!("Failed to get LLM response for word: {} - Error: {}", query.word, e);
             Json(QueryResponse {
                 success: false,
                 data: None,
-                message: format!("No definition found for '{}' in language '{}'", query.word, lang),
+                message: format!("Failed to get definition for '{}': {}", query.word, e),
             })
         }
     }
@@ -137,12 +139,24 @@ async fn query_word(ExtractJson(query): ExtractJson<WordQuery>) -> Json<QueryRes
 async fn main() {
     // Initialize tracing
     tracing_subscriber::fmt::init();
+
+    // Load .env file
+    dotenv().ok();
+
+    let llm_client = azure::Client::from_env();
+    let gpt4onano = llm_client.agent("gpt-4.1-nano").build();
+
+    // Initialize the app state
+    let app_state = AppState {
+        llm_client: gpt4onano,
+    };
     
     // Build our application with routes
     let app = Router::new()
         .route("/", get(health))
         .route("/health", get(health))
         .route("/query", post(query_word))
+        .with_state(app_state)
         // Add CORS layer to allow frontend requests
         .layer(CorsLayer::permissive());
     

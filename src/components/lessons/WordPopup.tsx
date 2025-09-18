@@ -146,7 +146,8 @@ export const WordPopup: React.FC<WordPopupProps> = ({
     try {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(example);
-        utterance.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+        // Always use Chinese TTS for example sentences
+        utterance.lang = 'zh-CN';
         utterance.rate = 0.8;
         
         utterance.onend = () => setPlayingExample(null);
