@@ -1,13 +1,13 @@
 use axum::{
-    extract::{Json as ExtractJson, State},
-    response::Json,
+    extract::{Json as ExtractJson, State, WebSocketUpgrade, ws::{WebSocket, Message}},
+    response::{Json, Response},
     routing::{get, post},
     Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tower_http::cors::CorsLayer;
-use tracing::{info, warn};
+use tracing::{info, warn, error};
 use rig::{agent::Agent, client::{CompletionClient, ProviderClient}, completion::Prompt, providers::azure};
 use dotenv::dotenv;
 
@@ -52,6 +52,35 @@ async fn health() -> Json<HealthResponse> {
         message: "Word Query Backend is running".to_string(),
     })
 }
+
+// WebSocket handler for chat
+async fn websocket_handler(
+    ws: WebSocketUpgrade,
+    State(app_state): State<AppState>,
+) -> Response {
+    ws.on_upgrade(|socket| handle_websocket(socket, app_state))
+}
+
+async fn handle_websocket(mut socket: WebSocket, app_state: AppState) {    
+    info!("WebSocket connection established");
+    
+    while let Some(msg) = socket.recv().await {
+        let msg = if let Ok(msg) = msg {
+            msg
+        } else {
+            // client disconnected
+            return;
+        };
+
+        if socket.send(msg).await.is_err() {
+            // client disconnected
+            return;
+        }
+    }
+    
+    info!("WebSocket connection ended");
+}
+
 
 // Query word with JSON body
 async fn query_word(
@@ -156,22 +185,26 @@ async fn main() {
         .route("/", get(health))
         .route("/health", get(health))
         .route("/query", post(query_word))
+        .route("/ws", get(websocket_handler)) 
         .with_state(app_state)
         // Add CORS layer to allow frontend requests
         .layer(CorsLayer::permissive());
     
     // Run the server
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001")
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8090")
         .await
         .unwrap();
     
-    info!("🚀 Word Query Backend server starting on http://0.0.0.0:3001");
+    info!("🚀 Word Query Backend server starting on http://0.0.0.0:8090");
     info!("📚 Available endpoints:");
     info!("  GET  /health           - Health check");
     info!("  POST /query            - Query word definition");
     info!("                         - Content-Type: application/json");
     info!("                         - Body: {{\"word\": \"天\", \"lang\": \"en\", \"difficulty\": \"beginner\"}}");
     info!("                         - Supported languages: en, zh");
+    info!("  GET  /ws               - WebSocket endpoint for chat");
+    info!("💬 WebSocket chat available at: ws://localhost:8090/ws");
+    
     
     axum::serve(listener, app).await.unwrap();
 }

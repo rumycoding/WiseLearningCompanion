@@ -8,9 +8,11 @@ interface WordDefinitionResult {
   };
 }
 
+const httpAddress = `${window.location.protocol}//${window.location.hostname}:8090`
+
 // Function to fetch word definition from backend
 const fetchWordDefinition = async (word: string, lang: string, difficulty?: string): Promise<WordDefinitionResult> => {
-  const response = await fetch('http://localhost:3001/query', {
+  const response = await fetch(`${httpAddress}/query`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

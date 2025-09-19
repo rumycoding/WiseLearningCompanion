@@ -12,7 +12,7 @@ import {v4 as uuidv4} from 'uuid';
 // get the device (instance)'s websocket endpoint
 const proto = window.location.protocol === "https:" ? "wss" : "ws";
 const host = window.location.hostname;
-const socket = new WebSocket(`${proto}://${host}:8090`);
+const socket = new WebSocket(`${proto}://${host}:8090/ws`);
 
 export function Chat() {
   const [messagesContainerRef, messagesEndRef] = useScrollToBottom<HTMLDivElement>();

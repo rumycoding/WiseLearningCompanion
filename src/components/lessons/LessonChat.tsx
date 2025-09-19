@@ -26,7 +26,7 @@ export const LessonChat = ({ currentLesson }: LessonChatProps) => {
   useEffect(() => {
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
     const host = window.location.hostname;
-    const ws = new WebSocket(`${proto}://${host}:8090`);
+    const ws = new WebSocket(`${proto}://${host}:8090/ws`);
     
     setSocket(ws);
     
