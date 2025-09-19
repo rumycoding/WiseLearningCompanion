@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useLessons } from '../../hooks/useLessons';
 import { LessonBrowser } from '../../components/lessons/LessonBrowser';
 import { LessonContent } from '../../components/lessons/LessonContent';
 import { useLanguage } from '../../context/LanguageContext';
+import { useLessonContext } from '../../context/LessonContext';
 
 export const LessonViewer = () => {
   const { t } = useLanguage();
@@ -17,7 +17,7 @@ export const LessonViewer = () => {
     navigateToPrevious,
     getNextLesson,
     getPreviousLesson
-  } = useLessons();
+  } = useLessonContext();
 
   if (loading) {
     return (

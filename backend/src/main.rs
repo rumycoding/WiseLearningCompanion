@@ -101,7 +101,7 @@ async fn query_word(
         Respond with a JSON object containing:
         - word: the Chinese character(s)
         - definition: short definition in the requested language
-        - examples: array of 2 example sentences
+        - examples: array of 2 example sentences, add translation ONLY if the user is using English language.
         
         Example response for the word '你好' in English language with beginner difficulty:
         {{
@@ -124,7 +124,7 @@ async fn query_word(
         }}
         
         Now provide the definition for '{0}' in {1} language with {2} difficulty level.
-        Format your response as valid JSON only, no additional text.",
+        Format your response as valid JSON only, no additional text. Do not send English if user requested definition in Chinese language.",
         query.word, lang, difficulty
     );
 

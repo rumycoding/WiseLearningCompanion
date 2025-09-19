@@ -1,12 +1,12 @@
-import { useLessons } from '../../hooks/useLessons';
 import { SplitLayout } from '../../components/lessons/SplitLayout';
 import { LessonViewer } from './LessonViewer';
 import { LessonChat } from '../../components/lessons/LessonChat';
 import { Header } from '../../components/custom/header';
 import { useLanguage } from '../../context/LanguageContext';
+import { LessonProvider, useLessonContext } from '../../context/LessonContext';
 
-export const ChineseLessons = () => {
-  const { currentLesson, loading, error } = useLessons();
+const ChineseLessonsContent = () => {
+  const { currentLesson, loading, error } = useLessonContext();
   const { t } = useLanguage();
 
   if (loading) {
@@ -60,5 +60,13 @@ export const ChineseLessons = () => {
         />
       </div>
     </div>
+  );
+};
+
+export const ChineseLessons = () => {
+  return (
+    <LessonProvider>
+      <ChineseLessonsContent />
+    </LessonProvider>
   );
 };
